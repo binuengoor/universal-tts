@@ -1,9 +1,10 @@
 from contextlib import asynccontextmanager
 import logging
+import os
 from typing import Optional
 from fastapi import Depends, FastAPI, Header, HTTPException, Response, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from gateway.audio import get_mime_type
 from gateway.cache import AudioCache
@@ -78,6 +79,21 @@ def verify_api_key(authorization: Optional[str] = Header(None)) -> None:
         )
 
 
+@app.get("/")
+async def root():
+    return {
+        "service": "Universal TTS Gateway",
+        "version": "0.1.0",
+        "description": "1:1 drop-in replacement for OpenAI and Kokoro-FastAPI TTS endpoints",
+        "endpoints": {
+            "speech": "POST /v1/audio/speech",
+            "models": "GET /v1/models",
+            "voices": "GET /v1/audio/voices (or /v1/voices)",
+            "health": "GET /health",
+        },
+    }
+
+
 @app.get("/health", response_model=HealthResponse)
 @app.get("/healthz", response_model=HealthResponse)
 async def health_check():
@@ -101,6 +117,7 @@ async def list_models():
 
 
 @app.get("/v1/audio/voices", response_model=VoiceListResponse, dependencies=[Depends(verify_api_key)])
+@app.get("/v1/voices", response_model=VoiceListResponse, dependencies=[Depends(verify_api_key)])
 async def list_voices():
     voices = await router.get_all_voices()
     return VoiceListResponse(voices=voices)
@@ -172,9 +189,10 @@ async def create_speech(request: SpeechRequest):
 if __name__ == "__main__":
     import uvicorn
 
+    port = int(os.getenv("PORT", str(settings.server.port)))
     uvicorn.run(
         "gateway.main:app",
         host=settings.server.host,
-        port=settings.server.port,
+        port=port,
         reload=False,
     )

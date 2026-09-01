@@ -8,6 +8,7 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
+      - "8880:8000"
     environment:
       - TTS_DEFAULT_ENGINE=edge-tts
       - TTS_CACHE_ENABLED=true
