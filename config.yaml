@@ -1,0 +1,66 @@
+server:
+  host: "0.0.0.0"
+  port: 8000
+  api_key: ""
+  cors_origins: ["*"]
+
+defaults:
+  engine: "edge-tts"
+  voice: "en-US-AriaNeural"
+  speed: 1.0
+  response_format: "mp3"
+
+cache:
+  enabled: true
+  max_entries: 500
+  max_memory_mb: 50
+  ttl_seconds: 86400
+
+circuit_breaker:
+  enabled: true
+  timeout_seconds: 5.0
+  fallback_engine: "piper"
+  fallback_voice: "en_US-ryan-medium"
+
+paths:
+  piper_models_dir: "models/piper"
+  kokoro_model_path: "models/kokoro/kokoro-v1.0.onnx"
+  kokoro_voices_path: "models/kokoro/voices-v1.0.bin"
+
+engines:
+  edge_tts:
+    enabled: true
+    default_voice: "en-US-AriaNeural"
+    native_format: "mp3"
+    timeout_seconds: 5.0
+  piper:
+    enabled: true
+    default_voice: "en_US-ryan-medium"
+    native_format: "wav"
+  kokoro:
+    enabled: true
+    default_voice: "af_heart"
+    native_format: "wav"
+
+openai_voice_map:
+  alloy: "en-US-AriaNeural"
+  echo: "en-US-GuyNeural"
+  fable: "en-GB-SoniaNeural"
+  onyx: "en-US-ChristopherNeural"
+  nova: "en-US-JennyNeural"
+  shimmer: "en-US-AnaNeural"
+
+short_aliases:
+  aria: "en-US-AriaNeural"
+  jenny: "en-US-JennyNeural"
+  guy: "en-US-GuyNeural"
+  sonia: "en-GB-SoniaNeural"
+  ryan: "en_US-ryan-medium"
+  amy: "en_US-amy-medium"
+  lessac: "en_US-lessac-medium"
+  heart: "af_heart"
+  bella: "af_bella"
+  sarah: "af_sarah"
+  nicole: "af_nicole"
+  adam: "am_adam"
+  michael: "am_michael"

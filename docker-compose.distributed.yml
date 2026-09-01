@@ -1,0 +1,24 @@
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: universal-tts-gateway:latest
+    container_name: universal-tts-gateway
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - TTS_DEFAULT_ENGINE=edge-tts
+      - TTS_CACHE_ENABLED=true
+      - TTS_CACHE_MAX_ENTRIES=1000
+      - TTS_CACHE_MAX_MEMORY_MB=100
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - ./models:/app/models
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
