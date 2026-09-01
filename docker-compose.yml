@@ -1,9 +1,9 @@
 services:
   universal-tts:
+    image: ghcr.io/binuengoor/universal-tts:latest
     build:
       context: .
       dockerfile: Dockerfile
-    image: universal-tts-gateway:latest
     container_name: universal-tts-gateway
     restart: unless-stopped
     ports:
