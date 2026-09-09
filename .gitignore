@@ -38,3 +38,8 @@ models/piper/*.onnx.json
 !models/piper/.gitkeep
 
 .DS_Store
+
+# Credentials and secrets
+credentials/
+*.key
+*.pem

@@ -28,6 +28,10 @@ DEFAULT_SHORT_ALIASES = {
     "nicole": "af_nicole",
     "adam": "am_adam",
     "michael": "am_michael",
+    "neural2-f": "en-US-Neural2-F",
+    "neural2-d": "en-US-Neural2-D",
+    "journey-f": "en-US-Journey-F",
+    "journey-d": "en-US-Journey-D",
 }
 
 
@@ -72,6 +76,14 @@ class EngineDetailConfig(BaseModel):
     timeout_seconds: Optional[float] = None
 
 
+class GoogleEngineConfig(BaseModel):
+    enabled: bool = True
+    credentials_path: Optional[str] = "credentials/google-service-account.json"
+    default_voice: str = "en-US-Neural2-F"
+    native_format: str = "mp3"
+    timeout_seconds: Optional[float] = 8.0
+
+
 class EnginesConfig(BaseModel):
     edge_tts: EngineDetailConfig = EngineDetailConfig(
         enabled=True, default_voice="en-US-AriaNeural", native_format="mp3", timeout_seconds=5.0
@@ -82,6 +94,7 @@ class EnginesConfig(BaseModel):
     kokoro: EngineDetailConfig = EngineDetailConfig(
         enabled=True, default_voice="af_heart", native_format="wav"
     )
+    google_cloud: GoogleEngineConfig = Field(default_factory=GoogleEngineConfig)
 
 
 class AppSettings(BaseSettings):

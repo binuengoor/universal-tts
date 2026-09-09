@@ -56,3 +56,52 @@ async def test_voice_and_engine_resolution():
     engine, voice = router.resolve_engine_and_voice(model="piper", voice="custom-voice")
     assert engine.engine_name == "piper"
     assert voice == "custom-voice"
+
+    # 5. Google Cloud explicit model
+    engine, voice = router.resolve_engine_and_voice(model="google-cloud", voice=None)
+    assert engine.engine_name == "google-cloud"
+    assert voice == "en-US-Neural2-F"
+
+    # 6. Google Cloud voice heuristic (Neural2)
+    engine, voice = router.resolve_engine_and_voice(model=None, voice="en-US-Neural2-F")
+    assert engine.engine_name == "google-cloud"
+    assert voice == "en-US-Neural2-F"
+
+    # 7. Google Cloud voice heuristic (Journey)
+    engine, voice = router.resolve_engine_and_voice(model=None, voice="en-US-Journey-D")
+    assert engine.engine_name == "google-cloud"
+    assert voice == "en-US-Journey-D"
+
+    # 8. Google Cloud short alias
+    engine, voice = router.resolve_engine_and_voice(model=None, voice="neural2-f")
+    assert engine.engine_name == "google-cloud"
+    assert voice == "en-US-Neural2-F"
+
+
+@pytest.mark.asyncio
+async def test_circuit_breaker_fallback_on_google_failure():
+    settings = AppSettings()
+    settings.circuit_breaker.enabled = True
+    settings.circuit_breaker.fallback_engine = "piper"
+    settings.circuit_breaker.fallback_voice = "en_US-ryan-medium"
+
+    router = TTSRouter(settings=settings)
+
+    # Mock google engine failure
+    router.engines["google-cloud"].synthesize_bytes = AsyncMock(side_effect=TimeoutError("Google Cloud TTS timed out"))
+
+    # Mock piper engine success
+    router.engines["piper"].synthesize_bytes = AsyncMock(return_value=(b"RIFF_mock_wav", "wav"))
+
+    audio_bytes, fmt, engine_name = await router.synthesize(
+        text="Testing google fallback",
+        model="google-cloud",
+        voice="en-US-Neural2-F",
+    )
+
+    assert engine_name == "piper"
+    assert audio_bytes == b"RIFF_mock_wav"
+    assert fmt == "wav"
+    router.engines["google-cloud"].synthesize_bytes.assert_called_once()
+    router.engines["piper"].synthesize_bytes.assert_called_once()
+

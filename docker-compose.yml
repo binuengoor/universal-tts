@@ -15,9 +15,11 @@ services:
       - TTS_CACHE_ENABLED=true
       - TTS_CACHE_MAX_ENTRIES=500
       - TTS_CACHE_MAX_MEMORY_MB=50
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/google-service-account.json
     volumes:
       - ./config.yaml:/app/config.yaml:ro
       - ./models:/app/models
+      - ./credentials:/app/credentials:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s

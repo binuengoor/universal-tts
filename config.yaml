@@ -41,6 +41,12 @@ engines:
     enabled: true
     default_voice: "af_heart"
     native_format: "wav"
+  google_cloud:
+    enabled: true
+    credentials_path: "credentials/google-service-account.json"
+    default_voice: "en-US-Neural2-F"
+    native_format: "mp3"
+    timeout_seconds: 8.0
 
 openai_voice_map:
   alloy: "en-US-AriaNeural"
@@ -64,3 +70,7 @@ short_aliases:
   nicole: "af_nicole"
   adam: "am_adam"
   michael: "am_michael"
+  neural2-f: "en-US-Neural2-F"
+  neural2-d: "en-US-Neural2-D"
+  journey-f: "en-US-Journey-F"
+  journey-d: "en-US-Journey-D"

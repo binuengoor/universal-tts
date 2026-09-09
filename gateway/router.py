@@ -5,6 +5,7 @@ from typing import AsyncGenerator, Dict, List, Optional, Tuple
 from gateway.config import AppSettings
 from gateway.engines.base import BaseTTSEngine
 from gateway.engines.edge_engine import EdgeTTSEngine
+from gateway.engines.google_engine import GoogleTTSEngine
 from gateway.engines.kokoro_engine import KokoroEngine
 from gateway.engines.piper_engine import PiperEngine
 from gateway.schemas import VoiceObject
@@ -42,6 +43,13 @@ class TTSRouter:
                 default_voice=self.settings.engines.kokoro.default_voice,
             )
 
+        if getattr(self.settings.engines, "google_cloud", None) and self.settings.engines.google_cloud.enabled:
+            self.engines["google-cloud"] = GoogleTTSEngine(
+                credentials_path=self.settings.engines.google_cloud.credentials_path,
+                default_voice=self.settings.engines.google_cloud.default_voice,
+                timeout_seconds=self.settings.engines.google_cloud.timeout_seconds or 8.0,
+            )
+
     def resolve_engine_and_voice(
         self,
         model: Optional[str],
@@ -67,12 +75,16 @@ class TTSRouter:
             target_engine_name = "piper"
         elif req_model in ("kokoro", "kokoro-tts"):
             target_engine_name = "kokoro"
+        elif req_model in ("google", "google-tts", "google-cloud", "gcp-tts"):
+            target_engine_name = "google-cloud"
         elif req_model in ("tts-1", "tts-1-hd"):
             # OpenAI standard model names map to default engine (edge-tts)
             target_engine_name = self.settings.defaults.engine
         else:
             # Infer from voice prefix/pattern
-            if any(req_voice.startswith(p) for p in ("af_", "am_", "bf_", "bm_", "jf_", "jm_", "zf_", "zm_", "ef_", "ff_", "if_", "pf_", "hf_")):
+            if any(k in req_voice for k in ("Neural2", "Journey", "Studio", "Wavenet", "Standard")):
+                target_engine_name = "google-cloud"
+            elif any(req_voice.startswith(p) for p in ("af_", "am_", "bf_", "bm_", "jf_", "jm_", "zf_", "zm_", "ef_", "ff_", "if_", "pf_", "hf_")):
                 target_engine_name = "kokoro"
             elif "Neural" in req_voice or req_voice.count("-") >= 2 and not req_voice.endswith(("-low", "-medium", "-high")):
                 target_engine_name = "edge-tts"
@@ -130,13 +142,14 @@ class TTSRouter:
             )
 
             # Circuit breaker fallback
-            if self.settings.circuit_breaker.enabled and primary_engine.engine_name == "edge-tts":
+            if self.settings.circuit_breaker.enabled and primary_engine.engine_name in ("edge-tts", "google-cloud"):
                 fallback_name = self.settings.circuit_breaker.fallback_engine
                 fallback_engine = self.engines.get(fallback_name)
                 if fallback_engine:
                     fallback_voice = self.settings.circuit_breaker.fallback_voice
                     logger.info(
-                        "⚡ Circuit breaker triggered: Falling back from Edge-TTS to %s (voice: %s)",
+                        "⚡ Circuit breaker triggered: Falling back from %s to %s (voice: %s)",
+                        primary_engine.engine_name,
                         fallback_name,
                         fallback_voice,
                     )

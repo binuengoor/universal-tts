@@ -111,7 +111,7 @@ async def health_check():
 
 @app.get("/v1/models", response_model=ModelListResponse, dependencies=[Depends(verify_api_key)])
 async def list_models():
-    model_ids = ["edge-tts", "piper", "kokoro", "tts-1", "tts-1-hd"]
+    model_ids = ["edge-tts", "piper", "kokoro", "google-cloud", "google-tts", "tts-1", "tts-1-hd"]
     models = [ModelObject(id=m) for m in model_ids]
     return ModelListResponse(data=models)
 
