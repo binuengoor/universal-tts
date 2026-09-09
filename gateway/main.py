@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 import logging
 import os
 from typing import Optional
-from fastapi import Depends, FastAPI, Header, HTTPException, Response, status
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 
@@ -118,8 +118,12 @@ async def list_models():
 
 @app.get("/v1/audio/voices", response_model=VoiceListResponse, dependencies=[Depends(verify_api_key)])
 @app.get("/v1/voices", response_model=VoiceListResponse, dependencies=[Depends(verify_api_key)])
-async def list_voices():
-    voices = await router.get_all_voices()
+async def list_voices(
+    all: bool = Query(False, description="Return all upstream voices instead of curated subset"),
+    locale: Optional[str] = Query(None, description="Filter voices by locale (e.g. en-US, ml-IN)"),
+    engine: Optional[str] = Query(None, description="Filter voices by engine (e.g. google-cloud, edge-tts)"),
+):
+    voices = await router.get_curated_voices(all=all, locale=locale, engine=engine)
     return VoiceListResponse(voices=voices)
 
 

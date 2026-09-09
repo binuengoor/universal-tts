@@ -97,6 +97,20 @@ class EnginesConfig(BaseModel):
     google_cloud: GoogleEngineConfig = Field(default_factory=GoogleEngineConfig)
 
 
+class CuratedVoiceItem(BaseModel):
+    id: str
+    engine: str
+    name: Optional[str] = None
+    language: str
+    gender: Optional[str] = None
+    sample_rate: Optional[int] = None
+
+
+class CuratedVoicesConfig(BaseModel):
+    enabled: bool = True
+    voices: List[CuratedVoiceItem] = Field(default_factory=list)
+
+
 class AppSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="TTS_",
@@ -110,6 +124,7 @@ class AppSettings(BaseSettings):
     circuit_breaker: CircuitBreakerConfig = Field(default_factory=CircuitBreakerConfig)
     paths: PathsConfig = Field(default_factory=PathsConfig)
     engines: EnginesConfig = Field(default_factory=EnginesConfig)
+    curated_voices: CuratedVoicesConfig = Field(default_factory=CuratedVoicesConfig)
     openai_voice_map: Dict[str, str] = Field(default_factory=lambda: dict(DEFAULT_OPENAI_VOICE_MAP))
     short_aliases: Dict[str, str] = Field(default_factory=lambda: dict(DEFAULT_SHORT_ALIASES))
 

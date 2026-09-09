@@ -82,7 +82,7 @@ class TTSRouter:
             target_engine_name = self.settings.defaults.engine
         else:
             # Infer from voice prefix/pattern
-            if any(k in req_voice for k in ("Neural2", "Journey", "Studio", "Wavenet", "Standard")):
+            if any(k in req_voice for k in ("Neural2", "Journey", "Studio", "Wavenet", "Standard", "Chirp")):
                 target_engine_name = "google-cloud"
             elif any(req_voice.startswith(p) for p in ("af_", "am_", "bf_", "bm_", "jf_", "jm_", "zf_", "zm_", "ef_", "ff_", "if_", "pf_", "hf_")):
                 target_engine_name = "kokoro"
@@ -176,6 +176,53 @@ class TTSRouter:
                 logger.warning("Error fetching voices from engine %s: %s", engine.engine_name, e)
         return all_voices
 
+    async def get_curated_voices(
+        self,
+        all: bool = False,
+        locale: Optional[str] = None,
+        engine: Optional[str] = None,
+    ) -> List[VoiceObject]:
+        """
+        Return voices, either the curated subset (default) or the full catalog (if all=True).
+        Supports optional filtering by locale and engine.
+        """
+        def _matches_filter(v: VoiceObject) -> bool:
+            if engine and v.engine.lower() != engine.lower():
+                return False
+            if locale:
+                target_loc = locale.lower().replace("_", "-")
+                v_loc = v.language.lower().replace("_", "-")
+                if v_loc != target_loc and not v_loc.startswith(target_loc):
+                    return False
+            return True
+
+        # Full catalog requested or curated voices disabled in config
+        if all or not getattr(self.settings.curated_voices, "enabled", True):
+            all_voices = await self.get_all_voices()
+            return [v for v in all_voices if _matches_filter(v)]
+
+        # Curated subset
+        curated_list = self.settings.curated_voices.voices
+        curated_objects: List[VoiceObject] = []
+
+        for item in curated_list:
+            # Only include if the engine is enabled and active in this deployment
+            if item.engine not in self.engines:
+                continue
+
+            v_obj = VoiceObject(
+                id=item.id,
+                name=item.name or item.id,
+                engine=item.engine,
+                language=item.language,
+                gender=item.gender,
+                sample_rate=item.sample_rate,
+            )
+            if _matches_filter(v_obj):
+                curated_objects.append(v_obj)
+
+        return curated_objects
+
     async def get_engine_health(self) -> Dict[str, bool]:
         status = {}
         for name, engine in self.engines.items():
@@ -184,3 +231,4 @@ class TTSRouter:
             except Exception:
                 status[name] = False
         return status
+
